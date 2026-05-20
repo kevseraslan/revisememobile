@@ -52,13 +52,13 @@ export default function GlobalLayout({ children }: { children: React.ReactNode }
     { id: 'today', icon: 'calendar-today', label: 'Bugünün Soruları', path: '/todays-questions' },
     { id: 'past', icon: 'history', label: 'Geçmiş Sorular', path: '/past-questions' },
     { id: 'report', icon: 'chart-bar', label: 'Gelişim Raporu', path: '/progress-report' },
-    { id: 'timer', icon: 'timer', label: 'Sayaç', path: '/timer' },
+    { id: 'timer', icon: 'timer', label: 'Sayaç', path: '/pomodoro' },
     { id: 'settings', icon: 'cog', label: 'Ayarlar', path: '/settings' },
   ];
 
   const bottomItems = [
     { id: 'add', icon: 'plus-box', label: 'Soru Ekle', path: '/add-question' },
-    { id: 'solve', icon: 'lightbulb-on', label: 'Soru Çöz', path: '/solve-question' },
+    { id: 'solve', icon: 'lightbulb-on', label: 'Soru Çöz', path: '/ai-solve' },
     { id: 'quiz', icon: 'brain', label: 'AI Quiz', path: '/ai-quiz' },
     { id: 'shorts', icon: 'play-box-multiple', label: 'AI Shorts', path: '/ai-shorts' },
   ];
@@ -67,6 +67,12 @@ export default function GlobalLayout({ children }: { children: React.ReactNode }
     toggleSidebar(false);
     router.push(path);
   };
+
+  const isAuthScreen = pathname === '/' || pathname === '/sign-up';
+
+  if (isAuthScreen) {
+    return <View style={styles.container}>{children}</View>;
+  }
 
   return (
     <View style={styles.container}>
@@ -82,13 +88,20 @@ export default function GlobalLayout({ children }: { children: React.ReactNode }
           <Text style={styles.headerTime}>{formatTime()}</Text>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileBtn}>
-          <Image 
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBVte85MkxGt2lJ4e2QzC7hRKSc4Qpti7XLHj_jxL61LN4QksrFxnQmRax2bi1fTzKAOUILqfdzVka1aj65ojhTWpNSITsnvh6LbgkZUFZBs3s_joKENLCmm1gRRfd1Us2bKzHaO4N8Kxph6rO-tJm3D2FaEo0EZ59i81xmjYtYFj-mrgb2iM29logmPBbeb1Lo_8YFiuw0huY4RHPn-fMZWRjrA2HuXb4AT3_JEoiulg3SPTtpvHnMrhwWSW0HSvqdXFhUuZTKttU' }} 
-            style={styles.profileImg} 
-          />
-          <View style={styles.onlineBadge} />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={() => router.push('/notifications')} style={styles.notifBtn}>
+            <MaterialIcons name="notifications-none" size={26} color={COLORS.onSurfaceVariant} />
+            <View style={styles.notifBadge} />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={() => router.push('/profile')} style={styles.profileBtn}>
+            <Image 
+              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBVte85MkxGt2lJ4e2QzC7hRKSc4Qpti7XLHj_jxL61LN4QksrFxnQmRax2bi1fTzKAOUILqfdzVka1aj65ojhTWpNSITsnvh6LbgkZUFZBs3s_joKENLCmm1gRRfd1Us2bKzHaO4N8Kxph6rO-tJm3D2FaEo0EZ59i81xmjYtYFj-mrgb2iM29logmPBbeb1Lo_8YFiuw0huY4RHPn-fMZWRjrA2HuXb4AT3_JEoiulg3SPTtpvHnMrhwWSW0HSvqdXFhUuZTKttU' }} 
+              style={styles.profileImg} 
+            />
+            <View style={styles.onlineBadge} />
+          </TouchableOpacity>
+        </View>
       </LinearGradient>
 
       {/* Main Content Area */}
@@ -154,7 +167,13 @@ export default function GlobalLayout({ children }: { children: React.ReactNode }
                   </View>
 
                   <View style={styles.sidebarFooter}>
-                    <TouchableOpacity style={styles.logoutBtn}>
+                    <TouchableOpacity 
+                      style={styles.logoutBtn}
+                      onPress={() => {
+                        toggleSidebar(false);
+                        router.replace('/');
+                      }}
+                    >
                       <MaterialIcons name="logout" size={20} color={COLORS.error} />
                       <Text style={styles.logoutText}>Çıkış Yap</Text>
                     </TouchableOpacity>
@@ -186,9 +205,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.05)',
   },
   menuBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
-  headerContent: { alignItems: 'center' },
+  headerContent: { flex: 1, alignItems: 'center' },
   headerDate: { color: COLORS.onSurfaceVariant, fontSize: 11, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' },
   headerTime: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginTop: 2 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  notifBtn: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.03)' },
+  notifBadge: { position: 'absolute', top: 12, right: 12, width: 8, height: 8, borderRadius: 4, backgroundColor: '#ffb4ab', borderWidth: 1, borderColor: '#1c1b1b' },
   profileBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: COLORS.primaryContainer, overflow: 'hidden' },
   profileImg: { width: '100%', height: '100%' },
   onlineBadge: { position: 'absolute', bottom: 0, right: 0, width: 12, height: 12, borderRadius: 6, backgroundColor: '#10b981', borderWidth: 2, borderColor: '#1c1b1b' },

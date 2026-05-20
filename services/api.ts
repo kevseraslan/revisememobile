@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 // Fiziksel cihazdan test için: bilgisayarın yerel IP adresini buraya yaz.
 // Emülatör: Android → 10.0.2.2,  iOS simülatör → localhost
 // Fiziksel cihaz → ör. 192.168.1.45
-const LOCAL_IP = '192.168.1.101'; // 👈 Kendi IP adresinle değiştir!
+const LOCAL_IP = '172.20.10.2'; // 👈 Kendi IP adresinle değiştir!
 
 export const BASE_URL =
   Platform.OS === 'android'
@@ -56,7 +56,13 @@ const api = axios.create({
 });
 
 // ── API Servisleri ───────────────────────────────────────────────────────────
+let lastAnalysisResult: any = null;
+
 export const apiService = {
+  // Analiz sonuçlarını saklamak için (Navigasyon sırasında veri kaybını önlemek için)
+  setLastAnalysis: (data: any) => { lastAnalysisResult = data; },
+  getLastAnalysis: () => lastAnalysisResult,
+
   // Profil İşlemleri
   getProfile: async () => {
     try {
@@ -91,6 +97,19 @@ export const apiService = {
     }
   },
 
+  // Analiz Edilen Soruyu Kaydet
+  saveSolvedQuestion: async (formData: FormData) => {
+    try {
+      const response = await api.post('/api/save-solved-question', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Save Solved Question Error:', error);
+      throw error;
+    }
+  },
+
   // Auth İşlemleri
   login: async (username: string, password: string) => {
     try {
@@ -98,6 +117,17 @@ export const apiService = {
       return response.data;
     } catch (error) {
       console.error('Login Error:', error);
+      throw error;
+    }
+  },
+
+  // Sosyal Giriş (Google, Apple vb.)
+  socialLogin: async (provider: string, email: string, name: string, token?: string) => {
+    try {
+      const response = await api.post('/api/social_login', { provider, email, name, token });
+      return response.data;
+    } catch (error) {
+      console.error('Social Login Error:', error);
       throw error;
     }
   },
@@ -116,7 +146,9 @@ export const apiService = {
   // Favori Soruları Getir
   getFavorites: async () => {
     try {
-      const response = await api.get('/favorites');
+      const response = await api.get('/favorites', {
+        headers: { 'Accept': 'application/json' }
+      });
       return response.data;
     } catch (error) {
       console.error('Favorites Error:', error);
@@ -124,13 +156,34 @@ export const apiService = {
     }
   },
 
-  // AI Shorts Getir
-  getShorts: async () => {
+  // AI Shorts Getir (Yeni YouTube tabanlı versiyon)
+  fetchYouTubeShort: async (topic: string = 'Tümü') => {
     try {
-      const response = await api.get('/api/shorts/videos');
+      const response = await api.post('/api/generate_shorts', { topic });
       return response.data;
     } catch (error) {
-      console.error('AI Shorts Error:', error);
+      console.error('Fetch YouTube Short Error:', error);
+      throw error;
+    }
+  },
+
+  // AI Short Aksiyonu (Beğen, Kaydet vb.)
+  handleShortAction: async (videoOrId: any, action: string) => {
+    try {
+      if (action === 'bookmark') {
+        const payload = typeof videoOrId === 'string'
+          ? { video_id: videoOrId, title: 'Kayıtlı Video', topic: 'Genel' }
+          : { video_id: videoOrId.video_id, title: videoOrId.title || '', topic: videoOrId.topic || 'Genel' };
+
+        const response = await api.post(`/api/save_short_to_pool`, payload);
+        return response.data;
+      } else {
+        const vidId = typeof videoOrId === 'string' ? videoOrId : videoOrId.video_id;
+        const response = await api.post(`/api/shorts/${vidId}/action`, { action });
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Short Action Error:', error);
       throw error;
     }
   },
@@ -138,7 +191,8 @@ export const apiService = {
   // AI Quiz Oluştur
   getAIQuiz: async () => {
     try {
-      const response = await api.post('/generate_ai_quiz');
+      // AI üretimi çok uzun sürebileceği için timeout süresini 120 saniyeye (2 dakika) çıkarıyoruz
+      const response = await api.post('/generate_ai_quiz', {}, { timeout: 120000 });
       return response.data;
     } catch (error) {
       console.error('AI Quiz Error:', error);
@@ -179,19 +233,7 @@ export const apiService = {
     }
   },
 
-  // ── Favori Soruları (Yıldızlı) Getir ─────────────────────────────────────────
-  getFavorites: async () => {
-    try {
-      // Backend'in is_json kontrolünden geçmesi için Content-Type: application/json gönderilir
-      const response = await api.get('/favorites', {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Favorites Error:', error);
-      throw error;
-    }
-  },
+
 
   // Geçmiş Soruları Getir
   getPastQuestions: async () => {
@@ -219,15 +261,26 @@ export const apiService = {
     }
   },
 
-  // Soru Ekle
+  // Soru Ekle (Manuel)
   addQuestion: async (formData: FormData) => {
     try {
-      const response = await api.post('/api/shorts/upload', formData, {
+      const response = await api.post('/add_question', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data;
     } catch (error) {
       console.error('Add Question Error:', error);
+      throw error;
+    }
+  },
+
+  // Kategorileri Getir
+  getCategories: async () => {
+    try {
+      const response = await api.get('/api/categories');
+      return response.data.categories;
+    } catch (error) {
+      console.error('Get Categories Error:', error);
       throw error;
     }
   },
@@ -294,7 +347,29 @@ export const apiService = {
       const response = await api.post(`/mark_completed/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Mark Question Completed Error:', error);
+      console.error('Mark Completed Error:', error);
+      throw error;
+    }
+  },
+
+  // Soruyu Çözülemedi (Başarısız) Olarak İşaretle
+  markQuestionFailed: async (id: number) => {
+    try {
+      const response = await api.post(`/mark_failed/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Mark Failed Error:', error);
+      throw error;
+    }
+  },
+
+  // Sonraki Soruyu Getir
+  getNextQuestion: async (currentId: number) => {
+    try {
+      const response = await api.get(`/next_question/${currentId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Get Next Question Error:', error);
       throw error;
     }
   },

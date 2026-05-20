@@ -91,20 +91,6 @@ export default function TodaysQuestionsScreen() {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      <BlurView intensity={80} tint="dark" style={styles.topNav}>
-        <View style={styles.navLeft}>
-          <TouchableOpacity style={styles.menuBtn}>
-            <MaterialIcons name="menu" size={24} color={COLORS.primaryContainer} />
-          </TouchableOpacity>
-          <Text style={styles.navTitle}>AI Academy</Text>
-        </View>
-        <View style={styles.avatarBorder}>
-          <Image 
-            source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkiMUB2Ak77dtfeyawFjzTuZEwYFqrW7ulHkSrpfTCr9D22kf1qAyQaS0Pv_KAi6OjOgJw-Prrp-aAulhh_DIJzqlPBxhhF2UEi6Vf3D-sos2IKGFleljulMaRO2ew1UB2AC9FxqxD5CY6QzZdTEtkxTa5wmEbG9QAkFbqJ8uER7RL9y81xV_WRK25lU-PMuVagtAwhRS-9FVttfMsZ3SfltPqKW8i8RysgBpu2-xav9kzEBwijV98US0oUMHaxmewIO0dy4r2tSs' }} 
-            style={styles.avatar}
-          />
-        </View>
-      </BlurView>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -257,24 +243,6 @@ export default function TodaysQuestionsScreen() {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <BlurView intensity={90} tint="dark" style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.replace('/notifications')}>
-          <MaterialIcons name="home" size={24} color={COLORS.outline} />
-          <Text style={styles.navItemText}>Ana Sayfa</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItemActive}>
-          <MaterialIcons name="explore" size={24} color={COLORS.primaryContainer} />
-          <Text style={styles.navItemTextActive}>Keşfet</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <MaterialIcons name="menu-book" size={24} color={COLORS.outline} />
-          <Text style={styles.navItemText}>Kütüphane</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
-          <MaterialIcons name="person" size={24} color={COLORS.outline} />
-          <Text style={styles.navItemText}>Profil</Text>
-        </TouchableOpacity>
-      </BlurView>
     </View>
   );
 }

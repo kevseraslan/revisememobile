@@ -3,7 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import PageWrapper from '../components/PageWrapper';
 import { apiService } from '../services/api';
 
@@ -12,8 +12,24 @@ export default function SolveQuestionScreen() {
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
 
-  // Params'dan gelen verileri ayrıştır
-  const analysisResult = params.analysisResult ? JSON.parse(params.analysisResult as string) : null;
+  // Params'dan veya servisten gelen verileri ayrıştır
+  const [analysisResult, setAnalysisResult] = useState<any>(() => {
+    try {
+      // Önce servise bak (büyük veriler buraya kaydediliyor)
+      const cached = apiService.getLastAnalysis();
+      if (cached) return cached;
+
+      // Fallback: URL params
+      if (!params.analysisResult) return null;
+      if (typeof params.analysisResult === 'string') {
+        return JSON.parse(params.analysisResult);
+      }
+      return params.analysisResult;
+    } catch (e) {
+      console.error('Analysis Result Parse Error:', e);
+      return null;
+    }
+  });
   const imageUri = params.imageUri as string;
 
   const handleSave = async () => {
@@ -39,10 +55,15 @@ export default function SolveQuestionScreen() {
         } as any);
       }
 
-      await apiService.addQuestion(formData);
-      Alert.alert('Başarılı', 'Soru başarıyla havuzunuza eklendi!', [
-        { text: 'Tamam', onPress: () => router.replace('/home') }
-      ]);
+      const result = await apiService.saveSolvedQuestion(formData);
+      
+      if (result.success) {
+        Alert.alert('Başarılı', result.message || 'Soru başarıyla havuzunuza eklendi!', [
+          { text: 'Tamam', onPress: () => router.replace('/home') }
+        ]);
+      } else {
+        Alert.alert('Hata', result.error || 'Soru kaydedilirken bir sorun oluştu.');
+      }
     } catch (error) {
       console.error('Save Question Error:', error);
       Alert.alert('Hata', 'Soru kaydedilirken bir sorun oluştu.');

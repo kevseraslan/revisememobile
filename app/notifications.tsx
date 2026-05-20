@@ -119,21 +119,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      {/* Top AppBar */}
-      <BlurView intensity={80} tint="dark" style={styles.topNav}>
-        <View style={styles.navLeft}>
-          <View style={styles.avatarContainer}>
-            <Image 
-              source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBVte85MkxGt2lJ4e2QzC7hRKSc4Qpti7XLHj_jxL61LN4QksrFxnQmRax2bi1fTzKAOUILqfdzVka1aj65ojhTWpNSITsnvh6LbgkZUFZBs3s_joKENLCmm1gRRfd1Us2bKzHaO4N8Kxph6rO-tJm3D2FaEo0EZ59i81xmjYtYFj-mrgb2iM29logmPBbeb1Lo_8YFiuw0huY4RHPn-fMZWRjrA2HuXb4AT3_JEoiulg3SPTtpvHnMrhwWSW0HSvqdXFhUuZTKttU' }} 
-              style={styles.avatar}
-            />
-          </View>
-          <Text style={styles.navTitle}>Dashboard</Text>
-        </View>
-        <TouchableOpacity style={styles.iconBtn}>
-          <MaterialIcons name="notifications-none" size={24} color={COLORS.outline} />
-        </TouchableOpacity>
-      </BlurView>
+
 
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
@@ -291,25 +277,7 @@ export default function NotificationsScreen() {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Bottom Navigation */}
-      <BlurView intensity={90} tint="dark" style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItemActive}>
-          <MaterialIcons name="grid-view" size={24} color={COLORS.primary} />
-          <Text style={styles.navTextActive}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/progress-report')}>
-          <MaterialIcons name="analytics" size={24} color={COLORS.outline} />
-          <Text style={styles.navText}>Activity</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/ai-shorts')}>
-          <MaterialIcons name="school" size={24} color={COLORS.outline} />
-          <Text style={styles.navText}>Learn</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => router.push('/profile')}>
-          <MaterialIcons name="person" size={24} color={COLORS.outline} />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
-      </BlurView>
+
     </View>
   );
 }

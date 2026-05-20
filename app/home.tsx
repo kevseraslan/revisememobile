@@ -21,12 +21,29 @@ const COLORS = {
   outline: '#948ea1',
   error: '#ffb4ab',
 };
+const MOTIVATION_QUOTES = [
+  "Başarı, her gün tekrarlanan küçük adımların toplamıdır.",
+  "Zorluklar seni yıldırmasın; onlar seni güçlendiren basamaklardır.",
+  "Bugün atacağın her küçük adım, yarınki büyük başarına açılan kapıdır.",
+  "Kendine inan! Zihninde başardığın her şey, gerçeklikte de mümkün olur.",
+  "Umutla başla, inançla devam et, azimle bitir.",
+  "Geleceğini bugünden inşa ediyorsun, çalışmaya devam et!",
+  "Zorlandığın anlar, sınırlarını aştığın ve geliştiğin anlardır.",
+  "Başarı hedefe ulaşmak değil, o yolda vazgeçmeden ilerlemektir."
+];
 
 export default function HomeScreen() {
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [motivationQuote, setMotivationQuote] = useState('');
+
+  useEffect(() => {
+    const randomQuote = MOTIVATION_QUOTES[Math.floor(Math.random() * MOTIVATION_QUOTES.length)];
+    setMotivationQuote(randomQuote);
+  }, []);
 
   const fetchDashboardData = async () => {
     try {
@@ -44,6 +61,39 @@ export default function HomeScreen() {
 
   useEffect(() => {
     fetchDashboardData();
+  }, []);
+
+  useEffect(() => {
+    // YKS 2026 Date: 20 June 2026, 10:15
+    const yksDate = new Date(2026, 5, 20, 10, 15, 0);
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = yksDate.getTime() - now.getTime();
+      let newTimeLeft = { days: 0, hours: 0, minutes: 0 };
+
+      if (difference > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const examDateOnly = new Date(yksDate);
+        examDateOnly.setHours(0, 0, 0, 0);
+
+        const daysDiff = Math.round((examDateOnly.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+        newTimeLeft = {
+          days: Math.max(0, daysDiff),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+        };
+      }
+      setTimeLeft(newTimeLeft);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const onRefresh = () => {
@@ -75,20 +125,19 @@ export default function HomeScreen() {
               <View style={styles.planBadge}>
                 <Text style={styles.planBadgeText}>ACTIVE PLAN</Text>
               </View>
-              <Text style={styles.heroTitle}>YKS 2024 Prep</Text>
+              <Text style={styles.heroTitle}>YKS 2026 Prep</Text>
               <Text style={styles.heroDesc}>
                 {data?.stats?.success_rate > 50 
                   ? `You've completed %${data.stats.success_rate} of your goals. Amazing work!` 
                   : `You've completed %${data?.stats?.success_rate || 0} of your goals. Keep pushing!`}
               </Text>
               
-              <View style={styles.heroActions}>
-                <TouchableOpacity style={styles.primaryBtn}>
-                  <Text style={styles.primaryBtnText}>Resume Session</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.secondaryBtn}>
-                  <Text style={styles.secondaryBtnText}>View Plan</Text>
-                </TouchableOpacity>
+              <View style={styles.quoteContainer}>
+                <View style={styles.quoteHeaderRow}>
+                  <MaterialIcons name="format-quote" size={20} color="#cdbdff" style={{ marginRight: 6 }} />
+                  <Text style={styles.quoteTitle}>Günün Motivasyonu</Text>
+                </View>
+                <Text style={styles.quoteText}>"{motivationQuote}"</Text>
               </View>
             </View>
             <View style={styles.heroDecor} />
@@ -184,15 +233,15 @@ export default function HomeScreen() {
             </View>
             <View style={styles.timerGrid}>
               <View style={styles.timerBox}>
-                <Text style={styles.timerNum}>45</Text>
+                <Text style={styles.timerNum}>{timeLeft.days}</Text>
                 <Text style={styles.timerUnit}>GÜN</Text>
               </View>
               <View style={styles.timerBox}>
-                <Text style={styles.timerNum}>11</Text>
+                <Text style={styles.timerNum}>{timeLeft.hours}</Text>
                 <Text style={styles.timerUnit}>SAAT</Text>
               </View>
               <View style={styles.timerBox}>
-                <Text style={styles.timerNum}>25</Text>
+                <Text style={styles.timerNum}>{timeLeft.minutes}</Text>
                 <Text style={styles.timerUnit}>DAKİKA</Text>
               </View>
             </View>
@@ -202,10 +251,10 @@ export default function HomeScreen() {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* Floating AI Assistant (Optional, can be moved to GlobalLayout if needed) */}
-      <TouchableOpacity style={styles.fab}>
+      {/* Floating AI Assistant */}
+      <TouchableOpacity style={styles.fab} onPress={() => router.push('/ai-solve')}>
         <LinearGradient colors={[COLORS.primaryContainer, '#5635b5']} style={styles.fabGradient}>
-          <MaterialCommunityIcons name="robot" size={28} color="#fff" />
+          <MaterialCommunityIcons name="auto-fix" size={28} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
     </View>
@@ -235,12 +284,11 @@ const styles = StyleSheet.create({
   planBadge: { backgroundColor: 'rgba(124, 77, 255, 0.15)', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, marginBottom: 12 },
   planBadgeText: { color: COLORS.primary, fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
   heroTitle: { color: '#fff', fontSize: 26, fontWeight: 'bold', marginBottom: 8 },
-  heroDesc: { color: COLORS.onSurfaceVariant, fontSize: 15, lineHeight: 22, marginBottom: 24 },
-  heroActions: { flexDirection: 'row', gap: 12 },
-  primaryBtn: { flex: 1, backgroundColor: COLORS.primaryContainer, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  primaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  secondaryBtn: { flex: 1, backgroundColor: 'rgba(255,255,255,0.05)', height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-  secondaryBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  heroDesc: { color: COLORS.onSurfaceVariant, fontSize: 15, lineHeight: 22, marginBottom: 16 },
+  quoteContainer: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 20, padding: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' },
+  quoteHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  quoteTitle: { color: COLORS.primary, fontSize: 10, fontWeight: 'bold', letterSpacing: 0.8, textTransform: 'uppercase' },
+  quoteText: { color: '#fff', fontSize: 13, lineHeight: 18, fontStyle: 'italic', fontWeight: '500' },
   heroDecor: { position: 'absolute', top: -50, right: -50, width: 150, height: 150, borderRadius: 75, backgroundColor: COLORS.primary, opacity: 0.05 },
 
   // Pools

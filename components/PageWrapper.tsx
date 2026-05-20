@@ -14,29 +14,12 @@ interface PageWrapperProps {
 }
 
 export default function PageWrapper({ children, title, showBottomNav = true, hideHeader = false }: PageWrapperProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
-      
-      {!hideHeader ? (
-        <GlobalHeader title={title} onMenuPress={() => setIsMenuOpen(true)} />
-      ) : (
-        <View style={styles.absoluteMenuContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setIsMenuOpen(true)}>
-            <MaterialIcons name="menu" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      )}
-      
-      <SideMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-      
       <View style={styles.content}>
         {children}
       </View>
-      
-      {showBottomNav && <GlobalBottomNav />}
     </SafeAreaView>
   );
 }

@@ -43,7 +43,40 @@ export default function QuestionDetailScreen() {
     try {
       const data = await apiService.markQuestionCompleted(Number(id));
       if (data.success) {
-        Alert.alert('Tebrikler!', 'Soru başarıyla tamamlandı.', [{ text: 'Tamam', onPress: () => router.back() }]);
+        Alert.alert('Tebrikler!', 'Soru başarıyla tamamlandı.', [{ text: 'Tamam', onPress: () => handleSkip() }]);
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'İşlem sırasında bir hata oluştu.');
+    }
+  };
+
+  const handleSkip = async () => {
+    try {
+      setLoading(true);
+      const data = await apiService.getNextQuestion(Number(id));
+      if (data && data.next_id) {
+        router.replace(`/question-detail?id=${data.next_id}`);
+      } else {
+        Alert.alert('Bitti', 'Bugün için çözülecek başka soru kalmadı.', [
+          { text: 'Tamam', onPress: () => router.push('/home') }
+        ]);
+      }
+    } catch (error) {
+      Alert.alert('Hata', 'Sonraki soruya geçilemedi.');
+      setLoading(false);
+    }
+  };
+
+  const handleFail = async () => {
+    try {
+      const data = await apiService.markQuestionFailed(Number(id));
+      if (data.success || data.message) {
+        Alert.alert('Bilgi', 'Soruyu daha sonra tekrar çözmek üzere atladınız.', [
+          { text: 'Tamam', onPress: () => handleSkip() }
+        ]);
+      } else {
+        // Fallback for mark_failed
+        handleSkip();
       }
     } catch (error) {
       Alert.alert('Hata', 'İşlem sırasında bir hata oluştu.');
@@ -172,14 +205,64 @@ export default function QuestionDetailScreen() {
             )}
           </View>
 
+          {/* Explanation / AI Solution Area */}
+          {(() => {
+            if (!question.explanation) return null;
+            
+            try {
+              // Try to parse as JSON (AI Solved format)
+              const aiData = JSON.parse(question.explanation);
+              if (aiData && (aiData.steps || aiData.detected_text)) {
+                return (
+                  <View style={styles.explanationCard}>
+                    {aiData.detected_text && (
+                      <View style={styles.detectedTextCont}>
+                        <MaterialIcons name="find-in-page" size={16} color="#948ea1" />
+                        <Text style={styles.detectedText}>{aiData.detected_text}</Text>
+                      </View>
+                    )}
+                    
+                    {aiData.steps && aiData.steps.length > 0 && (
+                      <View style={styles.solutionSteps}>
+                        <Text style={styles.solutionTitle}>Adım Adım Çözüm</Text>
+                        {aiData.steps.map((step: string, index: number) => (
+                          <View key={index} style={styles.stepItem}>
+                            <View style={styles.stepDot} />
+                            <Text style={styles.stepText}>{step}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    
+                    {aiData.final_answer && (
+                      <View style={styles.finalAnswerBox}>
+                        <Text style={styles.finalAnswerLabel}>DOĞRU CEVAP:</Text>
+                        <Text style={styles.finalAnswerText}>{aiData.final_answer}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              }
+            } catch (e) {
+              // Not JSON, render as plain text (Manual entry)
+              return (
+                <View style={styles.explanationCard}>
+                  <Text style={styles.solutionTitle}>Soru Açıklaması</Text>
+                  <Text style={styles.plainExplanationText}>{question.explanation}</Text>
+                </View>
+              );
+            }
+            return null;
+          })()}
+
           {/* Action Row */}
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.skipBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.skipBtn} onPress={handleSkip}>
               <MaterialIcons name="fast-forward" size={20} color="#948ea1" />
               <Text style={styles.skipBtnText}>Soruyu Atla</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.failBtn} onPress={() => Alert.alert('Bilgi', 'Soruyu daha sonra tekrar çözmek üzere atladınız.')}>
+            <TouchableOpacity style={styles.failBtn} onPress={handleFail}>
               <MaterialCommunityIcons name="emoticon-sad-outline" size={20} color="#d97706" />
               <Text style={styles.failBtnText}>Çözemedim</Text>
             </TouchableOpacity>
@@ -337,5 +420,18 @@ const styles = StyleSheet.create({
   cancelBtn: { flex: 1, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   cancelBtnText: { color: '#948ea1', fontWeight: 'bold' },
   confirmBtn: { flex: 2, height: 50, backgroundColor: '#7c4dff', borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  confirmBtnText: { color: '#fff', fontWeight: 'bold' }
+  confirmBtnText: { color: '#fff', fontWeight: 'bold' },
+
+  explanationCard: { backgroundColor: '#1c1b1b', borderRadius: 24, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  detectedTextCont: { flexDirection: 'row', gap: 8, paddingBottom: 16, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 16 },
+  detectedText: { flex: 1, color: '#948ea1', fontSize: 13, fontStyle: 'italic', lineHeight: 20 },
+  solutionSteps: { marginBottom: 16 },
+  solutionTitle: { color: '#cdbdff', fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  stepItem: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  stepDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#7c4dff', marginTop: 8 },
+  stepText: { flex: 1, color: '#e5e2e1', fontSize: 14, lineHeight: 22 },
+  finalAnswerBox: { backgroundColor: 'rgba(124, 77, 255, 0.1)', padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 8 },
+  finalAnswerLabel: { color: '#948ea1', fontSize: 10, fontWeight: 'bold', letterSpacing: 1, marginBottom: 4 },
+  finalAnswerText: { color: '#fff', fontSize: 24, fontWeight: 'bold' },
+  plainExplanationText: { color: '#e5e2e1', fontSize: 14, lineHeight: 22 },
 });
